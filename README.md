@@ -77,3 +77,10 @@ hosts::host_entries:
     host_aliases:
       - 'myhost'
 </pre>
+
+fqdn_ipaddress
+------------
+IP address that should be associated with our fqdn
+
+- *Default*: $::ipaddress
+
