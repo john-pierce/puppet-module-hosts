@@ -70,6 +70,13 @@
 #     ip: '10.0.0.5'
 #     host_aliases:
 #       - 'myhost'
+#
+# fqdn_ipaddress
+# ------------
+# IP address that should be associated with our fqdn
+#
+# - *Default*: $::ipaddress
+#
 
 class hosts (
   $collect_all           = false,
@@ -77,6 +84,7 @@ class hosts (
   $enable_ipv6_localhost = true,
   $enable_fqdn_entry     = true,
   $fqdn_host_aliases     = $::hostname,
+  $fqdn_ipaddress        = $::ipaddress,
   $localhost_aliases     = ['localhost',
                             'localhost4',
                             'localhost4.localdomain4'],
@@ -164,11 +172,11 @@ class hosts (
     true: {
       $fqdn_ensure          = 'present'
       $my_fqdn_host_aliases = $fqdn_host_aliases
-      $fqdn_ip              = $::ipaddress
+      $fqdn_ip              = $fqdn_ipaddress
     }
     false: {
       $fqdn_ensure          = 'absent'
-      $my_fqdn_host_aliases = ''
+      $my_fqdn_host_aliases = []
       $fqdn_ip              = ''
     }
     default: {
@@ -176,13 +184,25 @@ class hosts (
     }
   }
 
-  # On Debian based systems an entry for the fqdn with an alias of the hostname
-  # and IP of 127.0.1.1 is expected.
-  if $::osfamily == 'Debian' {
-    $fqdn_ip_real = '127.0.1.1'
-  } else {
-    $fqdn_ip_real = $fqdn_ip
+  # For collected IP addresses we don't want to do this
+  case $collect_all_real {
+    true: {
+      $fqdn_ip_real = $fqdn_ip
+    }
+    false: {
+      # On Debian based systems an entry for the fqdn with an alias of the
+      # hostname and IP of 127.0.1.1 is expected.
+      if $::osfamily == 'Debian' {
+        $fqdn_ip_real = '127.0.1.1'
+      } else {
+        $fqdn_ip_real = $fqdn_ip
+      }
+    }
+    default: {
+      fail("hosts::collect_all must be true or false and is ${collect_all}")
+    }
   }
+
 
   case $purge_hosts_enabled {
     true, false: { }
